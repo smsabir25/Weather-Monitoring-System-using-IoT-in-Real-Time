@@ -1,0 +1,38 @@
+readChannelID = 1937721; % Channel ID from which you are reading the data
+readAPIKey = 'UIMD71RM0ERIBGL8'; % Channel read API key from which you are reading the data
+TemperatureFieldID = 2; % Temperature Field ID
+HumidityFieldID = 3; % Humidity Field ID
+RainFieldID = 4; % rainlevel Field ID
+[tempC,time] = thingSpeakRead(readChannelID,'Fields',TemperatureFieldID, ...
+                                                'NumPoints',1,'ReadKey',readAPIKey); % Read the temperature data
+humidity = thingSpeakRead(readChannelID,'Fields',HumidityFieldID, ...
+                                                'NumPoints',1,'ReadKey',readAPIKey); % Read the humidity data
+rain = thingSpeakRead(readChannelID,'Fields',RainFieldID, ...
+                                                'NumPoints',1,'ReadKey',readAPIKey); % Read the rainlevel data
+[maxTempC,maxTempIndex] = max(tempC);
+[minTempC,minTempIndex] = min(tempC);
+
+alertApiKey='TAKWgsT7Ri1a26AXlBN';
+alertURL = "https://api.thingspeak.com/alerts/send";
+options = weboptions("HeaderFields", ["ThingSpeak-Alerts-API-Key", alertApiKey ]);
+alertSubject = sprintf("Alert!!");
+
+if humidity >= 90
+    alertBody = sprintf("It's highly humid, raining and cold here, temperature is %0.2f°C!. and humidity is %0.2f %", minTempC, humidity);
+elseif rain < 24
+    alertBody = sprintf("It's raining, temperature is %0.2f°C!. and humidity is %0.2f %", minTempC, rain);
+else
+    if minTempC <= 25
+        alertBody = sprintf("It's cold here and the temperature is %0.2f°C!.", minTempC);
+    elseif minTempC <= 28
+       alertBody = sprintf("It's Foggy here and the temperature is %0.2f°C!.", minTempC);
+    else
+        alertBody = sprintf("It's hot here and the temperature is %0.2f°C!.", maxTempC);
+    end                
+end
+    
+try
+webwrite(alertURL, "body", alertBody, "subject", alertSubject, options);
+catch
+    % Code execution will end up here when an error 429 (error due to frequent request) is caught
+end

@@ -1,0 +1,21 @@
+% matlab analysis for, curr.Temp, curr.Humidity, dewpointC, minTemperatureC, maxTemperatureC
+readChannelID = 1937721; % Channel ID from which you are reading the data
+readAPIKey = 'UIMD71RM0ERIBGL8'; % Channel read API key from which you are reading the data
+TemperatureFieldID = 2; % Temperature Field ID
+HumidityFieldID = 3; % Humidity Field ID
+[tempC,time] = thingSpeakRead(readChannelID,'Fields',TemperatureFieldID, ...
+                                                'NumPoints',1,'ReadKey',readAPIKey); % Read the temperature data
+humidity = thingSpeakRead(readChannelID,'Fields',HumidityFieldID, ...
+                                                'NumPoints',1,'ReadKey',readAPIKey); % Read the humidity data
+
+[maxTempC,maxTempIndex] = max(tempC); 
+[minTempC,minTempIndex] = min(tempC); 
+
+b = 17.62; % constant for water vapor (b)
+c = 243.5; % constant for barometric pressure (c).
+gamma = log(humidity/100)+b*tempC./(c+tempC);
+dewPointC = c*gamma./(b-gamma)
+display(dewPointC,'Dew Point is');
+writeChannelID = 1957207; % Write channel ID
+writeAPIKey = 'AGTRZJS3ERAPDCBB'; % Write channel API Key
+thingSpeakWrite(writeChannelID,[tempC,humidity,dewPointC,minTempC,maxTempC],'Fields',[1,2,3,4,5],'WriteKey',writeAPIKey);
